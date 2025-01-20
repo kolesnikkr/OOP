@@ -13,3 +13,4 @@ public class BankTransaction {
         logger.log("Транзакція " + transactionId + " оброблена успішно.");
     }
 }
+
