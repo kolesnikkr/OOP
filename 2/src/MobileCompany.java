@@ -1,16 +1,17 @@
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Scanner;
 
 abstract class Tariff {
-    private final String name;
-    private final double monthlyFee;
-    private final int clientCount;
+    private String name;
+    private double monthlyFee;
+    private int numberOfClients;
 
-    public Tariff(String name, double monthlyFee, int clientCount) {
+    public Tariff(String name, double monthlyFee, int numberOfClients) {
         this.name = name;
         this.monthlyFee = monthlyFee;
-        this.clientCount = clientCount;
+        this.numberOfClients = numberOfClients;
     }
 
     public String getName() {
@@ -21,114 +22,129 @@ abstract class Tariff {
         return monthlyFee;
     }
 
-    public int getClientCount() {
-        return clientCount;
+    public int getNumberOfClients() {
+        return numberOfClients;
     }
 
-    public abstract void describeTariff();
+    public abstract String getDetails();
+
+    @Override
+    public String toString() {
+        return "Тариф: " + name + ", Щомісячна плата: " + monthlyFee + " грн, Клієнтів: " + numberOfClients;
+    }
 }
 
 class BasicTariff extends Tariff {
-    public BasicTariff(String name, double monthlyFee, int clientCount) {
-        super(name, monthlyFee, clientCount);
+    private int callMinutes;
+
+    public BasicTariff(String name, double monthlyFee, int numberOfClients, int callMinutes) {
+        super(name, monthlyFee, numberOfClients);
+        this.callMinutes = callMinutes;
     }
 
     @Override
-    public void describeTariff() {
-        System.out.println("Базовий тариф: " + getName() + ", Щомісячна плата: " + getMonthlyFee());
+    public String getDetails() {
+        return "Базовий тариф: " + getName() + ", Хвилин дзвінків: " + callMinutes;
+    }
+}
+
+class InternetTariff extends Tariff {
+    private int dataLimit;
+
+    public InternetTariff(String name, double monthlyFee, int numberOfClients, int dataLimit) {
+        super(name, monthlyFee, numberOfClients);
+        this.dataLimit = dataLimit;
+    }
+
+    @Override
+    public String getDetails() {
+        return "Інтернет-тариф: " + getName() + ", Ліміт даних: " + dataLimit + " ГБ";
     }
 }
 
 class PremiumTariff extends Tariff {
-    private final double internationalCallMinutes;
+    private boolean includesRoaming;
 
-    public PremiumTariff(String name, double monthlyFee, int clientCount, double internationalCallMinutes) {
-        super(name, monthlyFee, clientCount);
-        this.internationalCallMinutes = internationalCallMinutes;
+    public PremiumTariff(String name, double monthlyFee, int numberOfClients, boolean includesRoaming) {
+        super(name, monthlyFee, numberOfClients);
+        this.includesRoaming = includesRoaming;
     }
 
     @Override
-    public void describeTariff() {
-        System.out.println("Преміальний тариф: " + getName() + ", Щомісячна плата: " + getMonthlyFee() + ", Хвилини міжнародних розмов: " + internationalCallMinutes);
-    }
-}
-
-class FamilyTariff extends Tariff {
-    private final int maxFamilyMembers;
-
-    public FamilyTariff(String name, double monthlyFee, int clientCount, int maxFamilyMembers) {
-        super(name, monthlyFee, clientCount);
-        this.maxFamilyMembers = maxFamilyMembers;
-    }
-
-    @Override
-    public void describeTariff() {
-        System.out.println("Сімейний тариф: " + getName() + ", Щомісячна плата: " + getMonthlyFee() + ", Максимальна кількість членів сім'ї: " + maxFamilyMembers);
+    public String getDetails() {
+        return "Преміальний тариф: " + getName() + ", Роумінг включено: " + (includesRoaming ? "Так" : "Ні");
     }
 }
 
 class TariffManager {
-    private final List<Tariff> tariffs;
-
-    public TariffManager() {
-        tariffs = new ArrayList<>();
-    }
+    private List<Tariff> tariffs = new ArrayList<>();
 
     public void addTariff(Tariff tariff) {
         tariffs.add(tariff);
     }
 
     public int getTotalClients() {
-        int totalClients = 0;
-        for (Tariff tariff : tariffs) {
-            totalClients += tariff.getClientCount();
-        }
-        return totalClients;
+        return tariffs.stream().mapToInt(Tariff::getNumberOfClients).sum();
     }
 
     public void sortTariffsByMonthlyFee() {
         tariffs.sort(Comparator.comparingDouble(Tariff::getMonthlyFee));
     }
 
-    public List<Tariff> findTariffsInRange(double minFee, double maxFee) {
+    public List<Tariff> findTariffsByPriceRange(double minPrice, double maxPrice) {
         List<Tariff> result = new ArrayList<>();
         for (Tariff tariff : tariffs) {
-            if (tariff.getMonthlyFee() >= minFee && tariff.getMonthlyFee() <= maxFee) {
+            if (tariff.getMonthlyFee() >= minPrice && tariff.getMonthlyFee() <= maxPrice) {
                 result.add(tariff);
             }
         }
         return result;
     }
 
-    public void displayAllTariffs() {
+    public void displayTariffs() {
         for (Tariff tariff : tariffs) {
-            tariff.describeTariff();
+            System.out.println(tariff);
         }
     }
 }
 
-public class MobileCompany {
+class MobileCompany {
     public static void main(String[] args) {
         TariffManager manager = new TariffManager();
 
-        manager.addTariff(new BasicTariff("Базовий 100", 100.0, 1000));
-        manager.addTariff(new PremiumTariff("Преміум 300", 300.0, 500, 100));
-        manager.addTariff(new FamilyTariff("Сімейний 200", 200.0, 700, 4));
+        manager.addTariff(new BasicTariff("Базовий-100", 100.0, 500, 300));
+        manager.addTariff(new InternetTariff("Інтернет-50", 150.0, 300, 50));
+        manager.addTariff(new PremiumTariff("Преміум-Роумінг", 250.0, 150, true));
 
         System.out.println("Усі тарифи:");
-        manager.displayAllTariffs();
+        manager.displayTariffs();
 
-        System.out.println("Усі кліенти: " + manager.getTotalClients());
+        System.out.println("Загальна кількість клієнтів: " + manager.getTotalClients());
 
+        System.out.println("Тарифи, відсортовані за щомісячною платою:");
         manager.sortTariffsByMonthlyFee();
-        System.out.println("Тарифи відсортовані за щомісячною платою:");
-        manager.displayAllTariffs();
+        manager.displayTariffs();
 
-        double minFee = 150.0, maxFee = 250.0;
-        System.out.println("Тарифи в діапазоні " + minFee + " грн" + " - " + maxFee + " грн:");
-        List<Tariff> tariffsInRange = manager.findTariffsInRange(minFee, maxFee);
-        for (Tariff tariff : tariffsInRange) {
-            tariff.describeTariff();
+        Scanner scanner = new Scanner(System.in);
+        try {
+            System.out.print("Введіть мінімальну вартість: ");
+            double minPrice = scanner.nextDouble();
+            System.out.print("Введіть максимальну вартість: ");
+            double maxPrice = scanner.nextDouble();
+
+            List<Tariff> foundTariffs = manager.findTariffsByPriceRange(minPrice, maxPrice);
+            System.out.println("Тарифи у діапазоні [" + minPrice + " грн, " + maxPrice + " грн]:");
+            if (foundTariffs.isEmpty()) {
+                System.out.println("Не знайдено жодного тарифу.");
+            } else {
+                for (Tariff tariff : foundTariffs) {
+                    System.out.println(tariff.getDetails());
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(" Будь ласка, введіть числа.");
+        } finally {
+            scanner.close();
         }
     }
 }
